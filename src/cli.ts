@@ -8,6 +8,7 @@ import * as ReadLine from "readline";
 const args = process.argv.slice(2);
 const syncDirFlag = args.find((a) => a.startsWith("--sync-dir="));
 const portFlag = args.find((a) => a.startsWith("--port="));
+const debugFlag = args.find((a) => a === "--debug");
 
 if (args.includes("--help") || args.includes("-h")) {
   console.log(`
@@ -16,6 +17,7 @@ Usage: azul [options]
 Options:
   --sync-dir=<path>   Specify the directory to sync
   --port=<number>     Specify the port number
+  --debug             Enables debug mode
   -h, --help          Show this help message
   `);
   process.exit(0);
@@ -25,7 +27,7 @@ Options:
 const currentPath = process.cwd();
 if (currentPath.includes("\\sync") || currentPath.includes("/sync")) {
   log.warn(
-    "Looks like you're trying to run Azul from within a 'sync' directory. It's recommended to run Azul from your project root to avoid potential issues."
+    "Looks like you're trying to run Azul from within a 'sync' directory. Continuing to run Azul will create a directory like \"/sync/sync/\"."
   );
   log.warn("Continue? (Y/N)");
 
@@ -55,5 +57,8 @@ log.info(`Running azul from: ${currentPath}`);
 
 if (syncDirFlag) config.syncDir = resolve(syncDirFlag.split("=")[1]);
 if (portFlag) config.port = Number(portFlag.split("=")[1]);
+if (debugFlag) config.debugMode = true;
+
+log.debug(`Debug mode is on!`);
 
 new SyncDaemon().start();
