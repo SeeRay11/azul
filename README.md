@@ -51,7 +51,7 @@ I believe Script Sync is a great step forward from Roblox but, in the way it has
 ### Auto-Install (Recommended)
 
 > [!NOTE]
-> Note that the following method is only available for Windows. If you are running macOS or Linux, please follow the [manual installation](#manual-installation).
+> The following method is only available for Windows. If you are running macOS or Linux, please follow the [manual installation](#manual-installation).
 
 1. [Download the repository as a ZIP](https://github.com/Ransomwave/azul/archive/refs/heads/main.zip) and extract it.
 2. Run the `install-windows.ps1` script to Install Azul.
