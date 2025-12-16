@@ -21,7 +21,7 @@ When you do need to seed Studio from local files, run the one-time `azul build` 
 - - [x] 🌳 **DataModel mirroring**: Instance hierarchy mapped to folder structure
 - - [x] 🔌 **Real-time WebSocket communication**: Instant synchronization
 - - [x] 🎯 **No manual configuration**: Works out of the box with new and existing projects.
-- - [x] 🏗️ **Build command**: `azul build` seeds Studio from your filesystem (creates/overwrites, no deletes)
+- - [x] 🏗️ **[Build command](#build-command)**: `azul build` seeds Studio from your filesystem (creates/overwrites, no deletes)
 
 ### Planned features
 
@@ -127,9 +127,11 @@ Script types are indicated by suffixes:
 
 ## Build Command
 
-- **What it does:** Pushes your sync directory into Studio once, creating missing folders/scripts and overwriting matching scripts. Extra Studio instances are left untouched.
-- **When to use:** Bootstrapping a new project, restoring from version control, or reseeding a clean Studio place before normal two-way sync.
-- **How to run:** `azul build [--sync-dir=PATH] [--port=PORT] [--no-warn]` with the plugin connected to the daemon.
+Importing code from elsewhere that isn't Roblox? Need to create a easily-reusable base project? The `azul build` command has you covered.
+
+- **What it does:** Pushes your sync directory into Studio once, creating missing folders/scripts and overwriting matching scripts. Unrelated Studio instances are left untouched.
+- **When to use:** Bootstrapping a new project, restoring from version control, importing files from non-roblox sources or reseeding a clean Studio place before normal two-way sync.
+- **How to run:** Run `azul build` in your project folder with the terminal. Run the Companion Plugin and see the changes appear in Studio!
 
 ## Configuration
 
