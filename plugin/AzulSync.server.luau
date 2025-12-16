@@ -1,16 +1,24 @@
 --[[
-	Azul - Roblox Studio Plugin
-	
-	This plugin keeps Studio scripts synchronized with a local filesystem
-	via WebSocket connection to the desktop daemon.
+	Azul - Roblox Studio Plugin.
+	Companion plugin for Azul to sync scripts between Roblox Studio and external editors.
+
+	By Ransomwave 2025
 ]]
 
+local ConfigService = game:GetService("ConfigService")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local ScriptEditorService = game:GetService("ScriptEditorService")
+local ServerStorage = game:GetService("ServerStorage")
 
 -- Import WebSocket client
-local WebSocketClient = require("./WebSocketClient")
+local WebSocketClient = require(script.Parent.WebSocketClient)
+local CollapsibleTitledSection =
+	require(ServerStorage.AzulCompanionPlugin.StudioWidgets.Components.CollapsibleTitledSection)
+local CustomTextButton = require(ServerStorage.AzulCompanionPlugin.StudioWidgets.Components.CustomTextButton)
+local LabeledCheckbox = require(ServerStorage.AzulCompanionPlugin.StudioWidgets.Components.LabeledCheckbox)
+local LabeledMultiChoice = require(ServerStorage.AzulCompanionPlugin.StudioWidgets.Components.LabeledMultiChoice)
+local LabeledTextInput = require(ServerStorage.AzulCompanionPlugin.StudioWidgets.Components.LabeledTextInput)
 
 local enum = {
 	listType = {
@@ -67,7 +75,7 @@ local LOGO_SYNCED = "rbxassetid://103599828888609" -- Sync icon asset ID
 -- Plugin state
 local plugin = plugin
 local toolbar = plugin:CreateToolbar("Azul")
-local connectButton = toolbar:CreateButton("Toggle Sync", "Connect/disconnect from sync daemon", LOGO)
+local connectButton = toolbar:CreateButton("Azul", "Connect/disconnect from sync daemon", LOGO)
 
 -- Sync state
 local syncEnabled = false
@@ -789,20 +797,270 @@ function stopSync()
 	infoPrint("[Azul]: Sync disabled")
 end
 
--- Toggle button handler
-connectButton.Click:Connect(function()
-	if syncEnabled then
-		stopSync()
-	else
-		startSync()
-	end
-end)
+-- -- Toggle button handler
+-- connectButton.Click:Connect(function()
+-- 	if syncEnabled then
+-- 		stopSync()
+-- 	else
+-- 		startSync()
+-- 	end
+-- end)
 
 -- Cleanup on plugin unload
 plugin.Unloading:Connect(function()
 	stopSync()
 end)
 
-infoPrint("[Azul]: Plugin loaded. Click 'Toggle Sync' to connect.")
+infoPrint("[Azul]: Plugin loaded. Click on the 'Azul' button to connect.")
 debugPrint("[🐛 Azul]: Debug mode is enabled!")
 debugPrint(`[🐛 Azul]: Service list type is set to: "{CONFIG.LIST_TYPE}"`)
+
+local widgetInfo = DockWidgetPluginGuiInfo.new(
+	Enum.InitialDockState.Float, -- Widget will be initialized in floating panel
+	true, -- Widget will be initially enabled
+	false, -- Don't override the previous enabled state
+	300, -- Default width of the floating window
+	300, -- Default height of the floating window
+	300, -- Minimum width of the floating window
+	300 -- Minimum height of the floating window
+)
+
+-- Create new widget GUI
+local azulWidget = plugin:CreateDockWidgetPluginGui("azulWidget", widgetInfo) :: DockWidgetPluginGui
+azulWidget.Name = "AzulCompanionPlugin"
+azulWidget.Title = "Azul" -- Optional widget title
+
+local uiListLayout = Instance.new("UIListLayout")
+uiListLayout.Parent = azulWidget
+uiListLayout.Padding = UDim.new(0, 10)
+
+local mainSectionListLayout = Instance.new("UIListLayout")
+mainSectionListLayout.Parent = azulWidget
+mainSectionListLayout.Padding = UDim.new(0, 0)
+mainSectionListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+mainSectionListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+local mainSection = CollapsibleTitledSection.new(
+	"mainSection", -- name suffix of the gui object
+	"Azul Companion Plugin", -- the text displayed beside the collapsible arrow
+	true, -- have the content frame auto-update its size?
+	false, -- minimizable?
+	false -- minimized by default?
+)
+mainSection:GetSectionFrame().LayoutOrder = 0
+mainSection:GetSectionFrame().Parent = azulWidget
+
+local function createInfoLabel(text: string)
+	local label = Instance.new("TextLabel")
+	label.Name = "InfoLabel"
+	label.RichText = true
+	label.AutomaticSize = Enum.AutomaticSize.Y
+	label.TextWrapped = true
+	label.Size = UDim2.new(1, 0, 0, 15)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.new(0.5, 0.5, 0.5)
+	label.Font = Enum.Font.SourceSans
+	label.TextSize = 15
+	label.Text = text
+	label.TextXAlignment = Enum.TextXAlignment.Left
+
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0, 30)
+	padding.PaddingRight = UDim.new(0, 30)
+	padding.Parent = label
+
+	return label
+end
+
+-- Title
+-- local titleLabel = Instance.new("TextLabel")
+-- titleLabel.Size = UDim2.new(1, 0, 0, 50)
+-- titleLabel.BackgroundTransparency = 1
+-- titleLabel.Text = "Azul"
+-- titleLabel.TextColor3 = Color3.new(1, 1, 1)
+-- titleLabel.Font = Enum.Font.SourceSansBold
+-- titleLabel.TextScaled = true
+-- mainSection:AddChild(titleLabel, 0)
+
+local titleImageLabel = Instance.new("ImageLabel")
+titleImageLabel.Size = UDim2.new(1, 0, 0, 50)
+titleImageLabel.BackgroundTransparency = 1
+titleImageLabel.Image = LOGO
+titleImageLabel.ScaleType = Enum.ScaleType.Fit
+mainSection:AddChild(titleImageLabel, 0)
+
+-- Connect/Disconnect button
+local syncButton = CustomTextButton.new("toggleSync", "Connect", false)
+syncButton.Parent = azulWidget
+
+syncButton:SetSize(UDim2.fromScale(1, 0.25))
+
+local padding = Instance.new("UIPadding")
+padding.PaddingLeft = UDim.new(0.1, 0)
+padding.PaddingRight = UDim.new(0.1, 0)
+padding.Parent = syncButton:GetFrame()
+
+syncButton:SetClickedFunction(function()
+	if syncEnabled then
+		syncButton:GetButton().Text = "Stopping..."
+		stopSync()
+		syncButton:GetButton().Text = "Connect"
+		titleImageLabel.Image = LOGO
+	else
+		syncButton:GetButton().Text = "Connecting..."
+		startSync()
+		syncButton:GetButton().Text = "Disconnect"
+		titleImageLabel.Image = LOGO_SYNCED
+	end
+end)
+mainSection:AddChild(syncButton:GetFrame())
+
+-- Quick settings
+local debugModeCheckbox = LabeledCheckbox.new("debugMode", "Debug Mode", CONFIG.DEBUG_MODE, false)
+
+debugModeCheckbox:SetValue(CONFIG.DEBUG_MODE)
+
+debugModeCheckbox:SetValueChangedFunction(function(newValue)
+	CONFIG.DEBUG_MODE = newValue
+	debugPrint("[🐛 Azul]: Debug mode set to:", newValue)
+end)
+mainSection:AddChild(debugModeCheckbox:GetFrame())
+mainSection:AddChild(createInfoLabel("Debug mode enables verbose logging to the output console."))
+
+local silentModeCheckbox = LabeledCheckbox.new("silentMode", "Silent Mode", CONFIG.SILENT_MODE, false)
+
+silentModeCheckbox:SetValue(CONFIG.SILENT_MODE)
+silentModeCheckbox:SetValueChangedFunction(function(newValue)
+	CONFIG.SILENT_MODE = newValue
+	debugPrint("[🐛 Azul]: Silent mode set to:", newValue)
+end)
+mainSection:AddChild(silentModeCheckbox:GetFrame())
+mainSection:AddChild(createInfoLabel("Silent mode suppresses all console output except errors."))
+
+-- Settings section
+local settingsSection = CollapsibleTitledSection.new(
+	"settings", -- name suffix of the gui object
+	"Plugin Settings", -- the text displayed beside the collapsible arrow
+	true, -- have the content frame auto-update its size?
+	true, -- minimizable?
+	true -- minimized by default?
+)
+settingsSection:GetSectionFrame().LayoutOrder = 1
+settingsSection:GetSectionFrame().Parent = azulWidget
+
+-- WebSocket URL setting
+local websocketUrlLabel = LabeledTextInput.new(
+	"websocketUrl", -- name suffix of the gui object
+	"WebSocket URL:", -- the text displayed beside the input box
+	CONFIG.WS_URL -- initial text in the input box
+)
+websocketUrlLabel:SetValue("ws://localhost:8080")
+websocketUrlLabel:SetValueChangedFunction(function(newValue)
+	CONFIG.WS_URL = newValue
+	debugPrint("[🐛 Azul]: WebSocket URL updated to:", newValue)
+end)
+
+settingsSection:AddChild(websocketUrlLabel:GetFrame())
+
+-- GUID Attribute Name setting
+local guidAttributeLabel = LabeledTextInput.new(
+	"guidAttribute", -- name suffix of the gui object
+	"GUID Attribute Name:", -- the text displayed beside the input box
+	CONFIG.GUID_ATTRIBUTE -- initial text in the input box
+)
+guidAttributeLabel:SetValue("AzulSyncGUID")
+guidAttributeLabel:SetValueChangedFunction(function(newValue)
+	CONFIG.GUID_ATTRIBUTE = newValue
+	debugPrint("[🐛 Azul]: GUID Attribute Name updated to:", newValue)
+end)
+guidAttributeLabel:SetMaxGraphemes(50)
+
+settingsSection:AddChild(guidAttributeLabel:GetFrame())
+
+-- Heartbeat Interval setting
+local heartbeatIntervalLabel = LabeledTextInput.new(
+	"heartbeatInterval", -- name suffix of the gui object
+	"Heartbeat Interval (s):", -- the text displayed beside the input box
+	tostring(CONFIG.HEARTBEAT_INTERVAL) -- initial text in the input box
+)
+heartbeatIntervalLabel:SetValue(tostring(CONFIG.HEARTBEAT_INTERVAL))
+heartbeatIntervalLabel:SetValueChangedFunction(function(newValue)
+	local interval = tonumber(newValue)
+	if interval and interval > 0 then
+		CONFIG.HEARTBEAT_INTERVAL = interval
+		debugPrint("[🐛 Azul]: Heartbeat Interval updated to:", interval)
+	end
+end)
+settingsSection:AddChild(heartbeatIntervalLabel:GetFrame())
+
+local listTypeLabel = LabeledMultiChoice.new(
+	"listType", -- name suffix of the gui object
+	"Service List Type:", -- the text displayed beside the input box
+	{
+		{ Id = "WHITELIST", Text = "Whitelist" },
+		{ Id = "BLACKLIST", Text = "Blacklist" },
+	}, -- choices
+	if CONFIG.LIST_TYPE == enum.listType.WHITELIST then 1 else 2 -- initial choice
+)
+
+listTypeLabel:SetValueChangedFunction(function(newIndex)
+	if newIndex == 1 then
+		CONFIG.LIST_TYPE = enum.listType.WHITELIST
+	else
+		CONFIG.LIST_TYPE = enum.listType.BLACKLIST
+	end
+	debugPrint("[🐛 Azul]: Service List Type updated to:", CONFIG.LIST_TYPE)
+end)
+
+settingsSection:AddChild(listTypeLabel:GetFrame())
+settingsSection:AddChild(
+	createInfoLabel("Whitelist: only services in the list are synced. Blacklist: services in the list are excluded.")
+)
+
+-- Service List setting
+local serviceListLabel = LabeledTextInput.new(
+	"serviceList", -- name suffix of the gui object
+	"Service List:", -- the text displayed beside the input box
+	table.concat(CONFIG.SERVICE_LIST, ", ") -- initial text in the input box
+)
+serviceListLabel:SetMaxGraphemes(9999)
+serviceListLabel:SetValue(table.concat(CONFIG.SERVICE_LIST, ", "))
+serviceListLabel:SetValueChangedFunction(function(newValue)
+	local services = {}
+	for serviceName in string.gmatch(newValue, "([^,%s]+)") do
+		table.insert(services, serviceName)
+	end
+	CONFIG.SERVICE_LIST = services
+	-- Update serviceSet
+	serviceSet = {}
+	for _, name in ipairs(CONFIG.SERVICE_LIST) do
+		serviceSet[name] = true
+	end
+	debugPrint("[🐛 Azul]: Service List updated to:", newValue)
+	debugPrint("[🐛 Azul]: New Service List:", CONFIG.SERVICE_LIST)
+end)
+settingsSection:AddChild(serviceListLabel:GetFrame())
+settingsSection:AddChild(createInfoLabel("List of services to include/exclude based on the selected List Type."))
+
+-- Excluded Parents setting
+local excludedParentsLabel = LabeledTextInput.new(
+	"excludedParents", -- name suffix of the gui object
+	"Excluded Parents:", -- the text displayed beside the input box
+	table.concat(CONFIG.EXCLUDED_PARENTS, ", ") -- initial text in the input box
+)
+excludedParentsLabel:SetValue(table.concat(CONFIG.EXCLUDED_PARENTS, ", "))
+excludedParentsLabel:SetValueChangedFunction(function(newValue)
+	local excluded = {}
+	for parentName in string.gmatch(newValue, "([^,%s]+)") do
+		table.insert(excluded, parentName)
+	end
+	CONFIG.EXCLUDED_PARENTS = excluded
+	debugPrint("[🐛 Azul]: Excluded Parents updated to:", newValue)
+	debugPrint("[🐛 Azul]: New Excluded Parents list:", CONFIG.EXCLUDED_PARENTS)
+end)
+settingsSection:AddChild(excludedParentsLabel:GetFrame())
+settingsSection:AddChild(createInfoLabel("List of parent paths to exclude from syncing, separated by commas."))
+
+connectButton.Click:Connect(function()
+	azulWidget.Enabled = not azulWidget.Enabled
+end)
