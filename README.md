@@ -52,7 +52,9 @@ I believe Script Sync is a great step forward from Roblox but, in the way it has
 
 ### Auto-Install (Recommended)
 
-> [!NOTE] > **For MacOS users: The `install-linux.sh` should also work for you.** If you don't have [Homebrew](https://brew.sh/), you can install Node.js manually from [nodejs.org](https://nodejs.org/) or use another package manager.
+> **For MacOS users: `install-linux.sh` should also work for you.** It will attempt to use the `brew` command (install [Homebrew](https://brew.sh/) if you don't have it) to install Node.js.
+>
+> Alternatively, you can install Node.js manually from [nodejs.org](https://nodejs.org/).
 
 1. [Download this repository as a ZIP](https://github.com/Ransomwave/azul/archive/refs/heads/main.zip) and extract it.
 2. In the extracted folder, locate the `/scripts` Folder & run the install script for your OS (`install-windows.ps1`, `install-linux.sh`).
