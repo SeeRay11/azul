@@ -2,10 +2,9 @@
 	Azul - Roblox Studio Plugin.
 	Companion plugin for Azul to sync scripts between Roblox Studio and external editors.
 
-	By Ransomwave 2025
+	Ransomwave 2025
 ]]
 
-local ConfigService = game:GetService("ConfigService")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local ScriptEditorService = game:GetService("ScriptEditorService")
@@ -50,7 +49,7 @@ local CONFIG = {
 		"ServerStorage.RecPlugins", -- Folder managed by "Eye" plugin. It updates the sourcemap thousands of times. We don't need to track this.
 	},
 
-	DEBUG_MODE = true,
+	DEBUG_MODE = false,
 	SILENT_MODE = false,
 }
 
@@ -486,7 +485,7 @@ local function processMessage(message)
 	debugPrint("[🐛 Azul]: Processing message type:", message.type)
 
 	if message.type == "patchScript" then
-		infoPrint("[Azul]: Patch requested for GUID:", message.guid)
+		debugPrint("[🐛 Azul]: Patch requested for GUID:", message.guid)
 		-- Update script source
 		local instance = guidMap[message.guid]
 		if instance and isScript(instance) then
@@ -529,12 +528,12 @@ local function processMessage(message)
 				end)
 			end
 		else
-			warn("Cannot apply patch - instance not found for GUID:", message.guid)
+			warn("[Azul]: Cannot apply patch - instance not found for GUID:", message.guid)
 			local count = 0
 			for _ in pairs(guidMap) do
 				count = count + 1
 			end
-			warn("Total tracked instances:", count)
+			warn("[Azul]: Total tracked instances:", count)
 		end
 	elseif message.type == "requestSnapshot" then
 		-- Daemon is requesting a full snapshot
@@ -663,7 +662,7 @@ local function processMessage(message)
 
 		infoPrint(`[Azul]: Build snapshot applied ({created} created/updated)`)
 	elseif message.type == "error" then
-		warn("Daemon error:", message.message)
+		warn("[Azul]: Daemon error:", message.message)
 	elseif message.type == "pong" then
 		-- Heartbeat response
 		debugPrint("[🐛 Azul]: Received pong")
@@ -710,14 +709,14 @@ local function startSync()
 
 	-- Set up error handler
 	wsClient:on("error", function(error)
-		warn("Connection error:", error)
+		warn("[Azul]: Connection error:", error)
 	end)
 
 	-- Connect to daemon
 	local connected = wsClient:connect()
 
 	if not connected then
-		warn("Failed to connect to daemon")
+		warn("[Azul]: Failed to connect to daemon")
 		stopSync()
 		return
 	end
