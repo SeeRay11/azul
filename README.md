@@ -56,15 +56,17 @@ I believe Script Sync is a great step forward from Roblox but, in the way it has
 >
 > Alternatively, you can install Node.js manually from [nodejs.org](https://nodejs.org/).
 
-1. [Download this repository as a ZIP](https://github.com/Ransomwave/azul/archive/refs/heads/main.zip) and extract it.
-2. In the extracted folder, locate the `/scripts` Folder & run the install script for your OS (`install-windows.ps1`, `install-linux.sh`).
-3. Install the Azul Companion Plugin to Roblox Studio.
+1. Clone this repository or [download it as a ZIP](https://github.com/Ransomwave/azul/archive/refs/heads/main.zip) and extract it.
+2. Inside the extracted folder, locate the `/scripts` Folder
+3. Run the install script for your OS (`install-windows.ps1`, `install-linux.sh`).
+4. Install the Azul Companion Plugin to Roblox Studio.
    - **Guide: [Azul Plugin: Install Instructions](/plugin/README.md)**
-4. Create a new Folder for your Azul project and open it in VSCode.
+5. Create a new Folder for your Azul project and open it in VSCode.
    - It is recommended to create a new empty folder to avoid conflicts with existing files.
-5. With the terminal open in your project folder, run `azul` to start.
-6. In Roblox Studio, click on the Azul icon in the toolbar to toggle syncing.
-7. Start coding!
+6. With the terminal open in your project folder, run `azul` to start.
+7. In Roblox Studio, click on the Azul icon in the toolbar to toggle syncing.
+8. Start coding!
+9. (Optional) [Set up VSCode with Luau-LSP](#recommended-use-vscode-with-luau-lsp) for the best experience.
 
 ### Manual Install
 
@@ -97,6 +99,23 @@ I believe Script Sync is a great step forward from Roblox but, in the way it has
 8. With the terminal open in your project folder, run `azul` to start.
 9. In Roblox Studio, click on the Azul icon in the toolbar to toggle syncing.
 10. Start coding!
+
+### Recommended: Use VSCode with Luau-LSP
+
+To get the best experience, use [Visual Studio Code](https://code.visualstudio.com/) with the [Luau Language Server extension](https://marketplace.visualstudio.com/items?itemName=JohnnyMorganz.luau-lsp).
+
+To get IntelliSense working, open your `User Settings (JSON)` from the command palette (`Ctrl+Shift+P` or `Cmd+Shift+P`) and make sure to set up luau-lsp like this:
+
+```json
+  "luau-lsp.plugin.enabled": true,
+  "luau-lsp.sourcemap.enabled": true,
+  "luau-lsp.sourcemap.autogenerate": false,
+  "luau-lsp.sourcemap.sourcemapFile": "sourcemap.json",
+  "luau-lsp.sourcemap.includeNonScripts": true,
+  "luau-lsp.sourcemap.useVSCodeWatcher": true,
+```
+
+This is my recommended setup for Azul projects. That said, Azul is compatible with any IDE or text editor that can edit `.luau` files. Luau-LSP is also available for other editors like [Neovim](https://github.com/lopi-py/luau-lsp.nvim).
 
 ## How It Works
 
