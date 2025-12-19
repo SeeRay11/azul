@@ -19,12 +19,32 @@ export interface TreeNode {
  */
 export class TreeManager {
   private nodes: Map<string, TreeNode> = new Map();
+  private pathIndex: Map<string, TreeNode> = new Map(); // pathKey → TreeNode
   private root: TreeNode | null = null;
+
+  private pathKey(path: string[]): string {
+    return path.join("\u0000");
+  }
+
+  private registerSubtree(node: TreeNode): void {
+    this.pathIndex.set(this.pathKey(node.path), node);
+    for (const child of node.children.values()) {
+      this.registerSubtree(child);
+    }
+  }
+
+  private unregisterSubtree(node: TreeNode): void {
+    this.pathIndex.delete(this.pathKey(node.path));
+    for (const child of node.children.values()) {
+      this.unregisterSubtree(child);
+    }
+  }
 
   public updateInstance(instance: InstanceData): {
     node: TreeNode;
     pathChanged: boolean;
     nameChanged: boolean;
+    isNew: boolean;
     prevPath?: string[];
     prevName?: string;
   } | null {
@@ -39,6 +59,10 @@ export class TreeManager {
       const nextSource =
         instance.source !== undefined ? instance.source : existing.source;
 
+      if (pathChanged) {
+        this.unregisterSubtree(existing);
+      }
+
       existing.className = instance.className;
       existing.name = instance.name;
       existing.path = instance.path;
@@ -47,10 +71,18 @@ export class TreeManager {
       if (pathChanged || nameChanged) {
         this.reparentNode(existing, instance.path);
         this.recalculateChildPaths(existing);
+        this.registerSubtree(existing);
       }
 
       log.debug(`Updated instance: ${instance.path.join("/")}`);
-      return { node: existing, pathChanged, nameChanged, prevPath, prevName };
+      return {
+        node: existing,
+        pathChanged,
+        nameChanged,
+        isNew: false,
+        prevPath,
+        prevName,
+      };
     }
 
     const node: TreeNode = {
@@ -65,9 +97,10 @@ export class TreeManager {
     this.nodes.set(instance.guid, node);
     this.reparentNode(node, instance.path);
     this.recalculateChildPaths(node);
+    this.registerSubtree(node);
 
     log.debug(`Created instance: ${instance.path.join("/")}`);
-    return { node, pathChanged: false, nameChanged: false };
+    return { node, pathChanged: false, nameChanged: false, isNew: true };
   }
 
   /**
@@ -78,6 +111,7 @@ export class TreeManager {
 
     // Clear existing tree
     this.nodes.clear();
+    this.pathIndex.clear();
     this.root = null;
 
     // First pass: create all nodes
@@ -91,6 +125,8 @@ export class TreeManager {
         children: new Map(),
       };
       this.nodes.set(instance.guid, node);
+      this.pathIndex.set(this.pathKey(instance.path), node);
+      log.debug(`Created node: ${instance.path.join("/")}`);
     }
 
     // Second pass: build hierarchy
@@ -112,6 +148,7 @@ export class TreeManager {
         }
         this.root.children.set(node.guid, node);
         node.parent = this.root;
+        log.debug(`Assigned root parent for: ${instance.path.join("/")}`);
       } else {
         // Find parent by matching path
         const parentPath = instance.path.slice(0, -1);
@@ -119,6 +156,7 @@ export class TreeManager {
         if (parent) {
           parent.children.set(node.guid, node);
           node.parent = parent;
+          log.debug(`Assigned parent for: ${instance.path.join("/")}`);
         } else {
           log.warn(`Parent not found for ${instance.path.join("/")}`);
         }
@@ -177,21 +215,29 @@ export class TreeManager {
   public deleteInstance(guid: string): TreeNode | null {
     const node = this.nodes.get(guid);
     if (!node) {
-      log.warn(`Attempted to delete non-existent node: ${guid}`);
+      log.debug(`Delete ignored for missing node: ${guid}`);
       return null;
     }
 
-    // Remove from parent
+    // Detach from parent first so no one references this subtree
     if (node.parent) {
       node.parent.children.delete(guid);
     }
 
-    // Remove from index
-    this.nodes.delete(guid);
+    // Iterative delete to avoid repeated recursion work on large subtrees
+    const stack: TreeNode[] = [node];
+    while (stack.length > 0) {
+      const current = stack.pop()!;
+      for (const child of current.children.values()) {
+        stack.push(child);
+      }
 
-    // Recursively delete children
-    for (const child of node.children.values()) {
-      this.deleteInstance(child.guid);
+      this.pathIndex.delete(this.pathKey(current.path));
+      this.nodes.delete(current.guid);
+
+      // Break references to help GC and prevent accidental reuse
+      current.children.clear();
+      current.parent = undefined;
     }
 
     log.debug(`Deleted instance: ${node.path.join("/")}`);
@@ -238,12 +284,7 @@ export class TreeManager {
    * Find a node by its path
    */
   private findNodeByPath(path: string[]): TreeNode | undefined {
-    for (const node of this.nodes.values()) {
-      if (JSON.stringify(node.path) === JSON.stringify(path)) {
-        return node;
-      }
-    }
-    return undefined;
+    return this.pathIndex.get(this.pathKey(path));
   }
 
   /**
@@ -267,6 +308,7 @@ export class TreeManager {
           children: new Map(),
         };
         this.nodes.set("root", this.root);
+        this.pathIndex.set(this.pathKey([]), this.root);
       }
       this.root.children.set(node.guid, node);
       node.parent = this.root;

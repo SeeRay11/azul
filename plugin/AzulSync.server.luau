@@ -200,8 +200,13 @@ end
 local function getOrCreateGUID(instance)
 	local guid = instance:GetAttribute(CONFIG.GUID_ATTRIBUTE)
 
-	-- If GUID is missing or collides with another instance, generate a fresh one
-	if not guid or (usedGuids[guid] and guidMap[guid] and guidMap[guid] ~= instance) then
+	-- If GUID is missing or already in use by a different instance, generate a fresh one.
+	-- Some Roblox operations (e.g., duplicate) copy attributes, so we must always uniquify.
+	local guidOwner = guid and guidMap[guid]
+	local guidInUseByOther = guid and guidOwner and guidOwner ~= instance
+	local guidUnknownButUsed = guid and usedGuids[guid] and not guidOwner
+
+	if (not guid) or guidInUseByOther or guidUnknownButUsed then
 		repeat
 			guid = HttpService:GenerateGUID(false):gsub("-", "")
 		until not usedGuids[guid]

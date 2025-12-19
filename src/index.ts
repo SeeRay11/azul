@@ -195,11 +195,13 @@ export class SyncDaemon {
       this.fileWriter.writeScript(scriptNode);
     }
 
-    if (
+    const shouldUpdateSourcemap =
+      update.isNew ||
       update.pathChanged ||
       update.nameChanged ||
-      this.isScriptClass(node.className)
-    ) {
+      this.isScriptClass(node.className);
+
+    if (shouldUpdateSourcemap) {
       this.sourcemapGenerator.upsertSubtree(
         node,
         this.tree.getAllNodes(),
@@ -217,8 +219,18 @@ export class SyncDaemon {
    */
   private handleDeleted(guid: string): void {
     const node = this.tree.getNode(guid);
-    const fallbackPath = node ? this.fileWriter.getFilePath(node) : undefined;
-    const pathSegments = node ? node.path : undefined;
+
+    // If the node is already gone (e.g., child deletes after parent delete), ignore quietly
+    if (!node) {
+      log.debug(`Delete ignored for unknown guid: ${guid}`);
+      // Still attempt to drop any lingering file mapping to keep disk clean
+      this.fileWriter.deleteScript(guid);
+      this.fileWriter.cleanupEmptyDirectories();
+      return;
+    }
+
+    const fallbackPath = this.fileWriter.getFilePath(node);
+    const pathSegments = node.path;
 
     // Delete from tree
     this.tree.deleteInstance(guid);
@@ -229,18 +241,14 @@ export class SyncDaemon {
       this.fileWriter.deleteFilePath(fallbackPath);
     }
 
-    // Remove from sourcemap incrementally when we know the path; fallback to full regen if unavailable
-    if (pathSegments) {
-      const outputPath = config.sourcemapPath;
-      this.sourcemapGenerator.prunePath(
-        pathSegments,
-        outputPath,
-        this.tree.getAllNodes(),
-        this.fileWriter.getAllMappings()
-      );
-    } else {
-      this.regenerateSourcemap();
-    }
+    // Remove from sourcemap incrementally when we know the path
+    const outputPath = config.sourcemapPath;
+    this.sourcemapGenerator.prunePath(
+      pathSegments,
+      outputPath,
+      this.tree.getAllNodes(),
+      this.fileWriter.getAllMappings()
+    );
 
     // Clean up empty directories
     this.fileWriter.cleanupEmptyDirectories();
