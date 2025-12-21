@@ -74,7 +74,7 @@ export class TreeManager {
         this.registerSubtree(existing);
       }
 
-      log.debug(`Updated instance: ${instance.path.join("/")}`);
+      log.script(`Updated instance: ${instance.path.join("/")}`, "updated");
       return {
         node: existing,
         pathChanged,
@@ -99,7 +99,7 @@ export class TreeManager {
     this.recalculateChildPaths(node);
     this.registerSubtree(node);
 
-    log.debug(`Created instance: ${instance.path.join("/")}`);
+    log.script(`Created instance: ${instance.path.join("/")}`, "created");
     return { node, pathChanged: false, nameChanged: false, isNew: true };
   }
 
@@ -240,7 +240,7 @@ export class TreeManager {
       current.parent = undefined;
     }
 
-    log.debug(`Deleted instance: ${node.path.join("/")}`);
+    log.script(`Deleted instance: ${node.path.join("/")}`, "deleted");
     return node;
   }
 

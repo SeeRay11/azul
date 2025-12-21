@@ -134,7 +134,7 @@ export class SourcemapGenerator {
 
       const json = JSON.stringify(sourcemap, null, 2);
       fs.writeFileSync(outputPath, json, "utf-8");
-      log.success(`Sourcemap written to: ${outputPath}`);
+      log.debug(`Sourcemap written to: ${outputPath}`);
     } catch (error) {
       log.error("Failed to write sourcemap:", error);
     }
