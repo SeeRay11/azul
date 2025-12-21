@@ -15,10 +15,10 @@ if RunService:IsRunning() then
 	return
 end
 
-local azulPluginFolder = script.Parent
+local azulPluginFolder = script.Parent.Parent
 
 -- Modules
-local WebSocketClient = require(script.Parent.WebSocketClient)
+local WebSocketClient = require(azulPluginFolder.WebSocketClient)
 local CollapsibleTitledSection = require(azulPluginFolder.StudioWidgets.Components.CollapsibleTitledSection)
 local CustomTextButton = require(azulPluginFolder.StudioWidgets.Components.CustomTextButton)
 local LabeledCheckbox = require(azulPluginFolder.StudioWidgets.Components.LabeledCheckbox)
@@ -797,8 +797,6 @@ local function startSync()
 	wsClient:on("connect", function()
 		infoPrint("[Azul]: Connected to daemon")
 		-- Send initial snapshot after connection
-		task.wait(0.5)
-		sendFullSnapshot()
 	end)
 
 	-- Set up disconnect handler
@@ -821,17 +819,21 @@ local function startSync()
 		return
 	end
 
-	-- Set up listeners for all existing instances
-	local function setupListeners(parent)
-		for _, child in ipairs(parent:GetChildren()) do
-			attachListeners(child)
-			setupListeners(child)
+	-- Defer listener setup to avoid blocking
+	task.defer(function()
+		-- Setup listeners for existing instances
+		local function setupListeners(parent)
+			for _, child in ipairs(parent:GetChildren()) do
+				attachListeners(child)
+				setupListeners(child)
+			end
 		end
-	end
 
-	for _, service in ipairs(game:GetChildren()) do
-		setupListeners(service)
-	end
+		for _, service in ipairs(game:GetChildren()) do
+			setupListeners(service)
+			task.wait() -- Yield between services
+		end
+	end)
 
 	-- Listen for new instances
 	local descendantAddedConnection = game.DescendantAdded:Connect(function(instance)
