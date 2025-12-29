@@ -12,7 +12,9 @@ _Yes, the name is a pun on Rojo (Spanish for "red"). Azul means "blue"!_
 
 Unlike Rojo, Azul treats **Studio as the source of truth.** The local filesystem mirrors what's in Studio, not the other way around.
 
-When you do need to seed Studio from local files, run the one-time `azul build` command; after that, the regular sync loop continues to treat Studio as primary.
+Azul avoids the complexity and ambiguity that can come with tools like Rojo: for example, deciding a new Script's parent class, properties, or attributes. Rather than trying to encode Studio state in extra files (e.g. `*.meta.json`), Azul lets Studio be the source of truth. This, in my opinion, leads to a much simpler and more intuitive workflow.
+
+Azul also allows pushing local files into Studio using the `azul build` command, which creates or overwrites instances in Studio based on your local files.
 
 ## Features
 
@@ -34,9 +36,9 @@ Compatible with projects both old and new, no more extra worrying about how to â
 
 ### Rojo already exists, why make another tool?
 
-I created Azul because I wanted a way to use my favorite IDE in Roblox development without the hassle of setting up Rojo projects, managing configurations, and being forced to commit to a filesystem-only workflow.
+While Rojo is a powerful tool, I don't believe it's always the best fit for every developer or project. Otherwise trivial tasks in Studio, like inserting a Script inside Tool or Model, suddenly become non-trivial challenges. Rojo just lacks the flexibility of Studio.
 
-Rojo is a great tool for many developers, but it often requires a significant investment in setup and maintenance that drives many away from using local development tools altogether. Azul aims to simplify this process, allowing you to focus on coding rather than tooling.
+Azul is my approach to solve these issues. I built Azul for workflows similar to mine: Studio-first developers who'd rather manage their projects in the dedicated environment instead of fighting with meta files.
 
 ### Why not use the upcoming Script Sync feature?
 
