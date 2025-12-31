@@ -116,11 +116,12 @@ local BATCH_INTERVAL = 0.2 -- Seconds between outbound batch flushes
 -- Utility: Clear all GUID attributes
 -- This is for legacy support; we now use :GetDebugId() for stable GUIDs
 local function clearAllGUIDAttributes()
-	for instance, _ in pairs(trackedInstances) do
-		if instance and instance:GetAttribute(CONFIG.GUID_ATTRIBUTE) then
-			instance:SetAttribute(CONFIG.GUID_ATTRIBUTE, nil)
-		end
+	local guidAttributeName = plugin:GetSetting("GUID_ATTRIBUTE") or "AzulSyncGUID"
+
+	for _, instance in game:GetDescendants() do
+		if instance:GetAttribute(guidAttributeName) then instance:SetAttribute(guidAttributeName, nil) end
 	end
+	infoPrint("[Azul]: Cleared all legacy GUID attributes from instances.")
 end
 
 -- Utility: Check if instance is a script
@@ -1117,6 +1118,31 @@ excludedParentsLabel:SetValueChangedFunction(function(newValue)
 end)
 settingsSection:AddChild(excludedParentsLabel:GetFrame())
 settingsSection:AddChild(createInfoLabel("List of parent paths to exclude from syncing, separated by commas."))
+
+-- Clear legacy GUIDs button
+local clearGuidsButton = CustomTextButton.new(
+	"clearLegacyGUIDs", -- name of the gui object
+	"Clear Legacy GUIDs", -- the text displayed on the button
+	false -- should it have square corners?
+)
+
+clearGuidsButton:SetClickedFunction(function()
+	clearAllGUIDAttributes()
+end)
+
+clearGuidsButton:SetSize(UDim2.fromScale(1, 0.1))
+
+local clearButtonPadding = Instance.new("UIPadding")
+clearButtonPadding.PaddingLeft = UDim.new(0.1, 0)
+clearButtonPadding.PaddingRight = UDim.new(0.1, 0)
+clearButtonPadding.Parent = clearGuidsButton:GetFrame()
+
+settingsSection:AddChild(clearGuidsButton:GetFrame())
+settingsSection:AddChild(
+	createInfoLabel(
+		"Removes all stored GUID attributes from instances in the DataModel. Use this to clean GUIDs left by old versions of Azul."
+	)
+)
 
 connectButton.Click:Connect(function()
 	azulWidget.Enabled = not azulWidget.Enabled
