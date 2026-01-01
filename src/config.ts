@@ -36,6 +36,6 @@ export const config = {
   deleteOrphansOnConnect: true,
 
   /** Suffix ModuleScript names with ".module"? */
-  // Default: true
-  suffixModuleScripts: true,
+  // Default: false
+  suffixModuleScripts: false,
 };
