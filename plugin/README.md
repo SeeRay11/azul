@@ -46,6 +46,6 @@ Roblox is very particular about how plugins are installed. Sometimes, just "gett
 
 ### Clearing Legacy GUIDs
 
-Ever since Azul 1.0.5, the plugin uses a new method to identify projects. It is highly advised to clear any legacy GUIDs to avoid conflicts since they are no longer needed and consume unnecessary resources.
+Ever since Azul 1.0.5, the plugin uses a new method to identify Instances. It is highly advised to clear any legacy GUIDs to avoid conflicts since they are no longer needed and consume unnecessary resources.
 
 You can do so by clicking the "Clear Legacy GUIDs" button in the plugin settings. This will remove all old GUIDs stored in your Explorer.
