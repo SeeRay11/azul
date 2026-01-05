@@ -48,7 +48,12 @@ export class FileWriter {
    * Write or update a single script
    */
   public writeScript(node: TreeNode): string | null {
-    if (!this.isScriptNode(node) || !node.source) {
+    if (!this.isScriptNode(node)) {
+      return null;
+    }
+
+    // Allow empty-string sources on new scripts; only skip if source is truly undefined
+    if (node.source === undefined) {
       return null;
     }
 
