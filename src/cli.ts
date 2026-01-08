@@ -5,6 +5,7 @@ import { config } from "./config.js";
 import { log } from "./util/log.js";
 import * as ReadLine from "readline";
 import { BuildCommand } from "./build.js";
+import { PushCommand } from "./push.js";
 
 const args = process.argv.slice(2);
 const commandIndex = args.findIndex((a) => !a.startsWith("--"));
@@ -14,7 +15,7 @@ const portFlag = args.find((a) => a.startsWith("--port="));
 const debugFlag = args.find((a) => a === "--debug");
 const noWarnFlag = args.find((a) => a === "--no-warn");
 
-const version = "1.0.5";
+const version = "1.1.0";
 
 if (args.includes("--help") || args.includes("-h")) {
   console.log(`
@@ -26,6 +27,7 @@ Arguments:
 
 Commands:
   build                One-time push from filesystem into Studio
+  push                 Selective push using mappings (place config or -s/-d)
 
 Options:
   --version           Show Azul version
@@ -33,6 +35,10 @@ Options:
   --sync-dir=<path>   Specify the directory to sync
   --port=<number>     Specify the port number
   --debug             Enables debug mode
+  -s, --source        Source folder (push)
+  -d, --destination   Destination path, dot or slash separated (push)
+  --destructive       Wipe destination children before push (push)
+  --no-place-config   Do not read push mappings from place ModuleScript (push)
   -h, --help          Show this help message
   `);
   process.exit(0);
@@ -118,12 +124,72 @@ if (command === "build") {
   await new BuildCommand({ syncDir: config.syncDir }).run();
 
   log.info("Build command completed.");
-  log.info(
-    "To continue syncing, please run 'azul' and restart the Roblox plugin."
-  );
+  log.info("Run 'azul' to resume live sync if needed.");
   log.info("Exiting...");
 
   process.exit(0);
 }
 
+if (command === "push") {
+  const sourceValue = getFlagValue(["-s", "--source"], args);
+  const destValue = getFlagValue(["-d", "--destination"], args);
+  const destructive = args.includes("--destructive");
+  const usePlaceConfig = !args.includes("--no-place-config");
+
+  if (destructive && !noWarnFlag) {
+    log.warn(
+      "WARNING: Destructive push will wipe destination children before applying snapshot. Proceed? (Y/N)"
+    );
+
+    await new Promise<void>((resolve) => {
+      process.stdin.setEncoding("utf-8");
+      const rl = ReadLine.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+
+      rl.on("line", (input) => {
+        const answer = input.trim().toLowerCase();
+        if (answer === "y" || answer === "yes") {
+          rl.close();
+          resolve();
+        } else if (answer === "n" || answer === "no") {
+          log.info("Exiting push command...");
+          process.exit(0);
+        } else {
+          log.warn(
+            "Please answer Y (yes) or N (no). Continue with destructive push? (Y/N)"
+          );
+        }
+      });
+    });
+  }
+
+  await new PushCommand({
+    source: sourceValue ?? undefined,
+    destination: destValue ?? undefined,
+    destructive,
+    usePlaceConfig,
+  }).run();
+
+  log.info("Push command completed.");
+  log.info("Run 'azul' to resume live sync if needed.");
+  process.exit(0);
+}
+
 new SyncDaemon().start();
+
+function getFlagValue(flags: string[], argv: string[]): string | null {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    for (const flag of flags) {
+      if (arg === flag) {
+        return argv[i + 1] ?? null;
+      }
+      if (arg.startsWith(`${flag}=`)) {
+        return arg.split("=")[1] ?? null;
+      }
+    }
+  }
+  return null;
+}

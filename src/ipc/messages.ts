@@ -34,7 +34,8 @@ export type StudioMessage =
   | ScriptChangedMessage
   | DeletedMessage
   | PingMessage
-  | ClientDisconnect;
+  | ClientDisconnect
+  | PushConfigMessage;
 
 export interface FullSnapshotMessage {
   type: "fullSnapshot";
@@ -67,6 +68,11 @@ export interface ClientDisconnect {
   type: "clientDisconnect";
 }
 
+export interface PushConfigMessage {
+  type: "pushConfig";
+  config: PushConfig;
+}
+
 /**
  * Messages from Daemon → Studio
  */
@@ -75,7 +81,9 @@ export type DaemonMessage =
   | RequestSnapshotMessage
   | PongMessage
   | ErrorMessage
-  | BuildSnapshotMessage;
+  | BuildSnapshotMessage
+  | RequestPushConfigMessage
+  | PushSnapshotMessage;
 
 export interface PatchScriptMessage {
   type: "patchScript";
@@ -99,4 +107,32 @@ export interface ErrorMessage {
 export interface BuildSnapshotMessage {
   type: "buildSnapshot";
   data: InstanceData[];
+}
+
+export interface RequestPushConfigMessage {
+  type: "requestPushConfig";
+}
+
+export interface PushSnapshotMessage {
+  type: "pushSnapshot";
+  mappings: PushSnapshotMapping[];
+}
+
+export interface PushSnapshotMapping {
+  destination: string[];
+  destructive?: boolean;
+  instances: InstanceData[];
+}
+
+export interface PushConfig {
+  mappings: PushConfigMapping[];
+  port?: number;
+  debugMode?: boolean;
+  deleteOrphansOnConnect?: boolean;
+}
+
+export interface PushConfigMapping {
+  source: string;
+  destination: string[];
+  destructive?: boolean;
 }

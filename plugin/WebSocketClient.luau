@@ -4,6 +4,8 @@
 	
 	Uses Roblox Studio's native WebSocket support (WebStreamClient) for real-time
 	bidirectional communication with the sync daemon.
+
+	Ransomwave 2025
 ]]
 
 local HttpService = game:GetService("HttpService")
@@ -46,26 +48,20 @@ function WebSocketClient.new(url, config: configType?)
 		silentMode = true,
 	}
 
-	if self.config.debugMode then
-		print("[🐛 WebSocket]: Debug mode is enabled!")
-	end
+	if self.config.debugMode then print("[🐛 WebSocket]: Debug mode is enabled!") end
 
 	return (self :: any) :: WebSocketClient
 end
 
 function WebSocketClient:debugPrint(...)
 	self = self :: WebSocketClient
-	if self.config.silentMode or not self.config.debugMode then
-		return
-	end
+	if self.config.silentMode or not self.config.debugMode then return end
 	print(...)
 end
 
 function WebSocketClient:infoPrint(...)
 	self = self :: WebSocketClient
-	if self.config.silentMode then
-		return
-	end
+	if self.config.silentMode then return end
 	print(...)
 end
 
@@ -76,9 +72,7 @@ end
 
 function WebSocketClient:connect()
 	self = self :: WebSocketClient
-	if self.connected then
-		return true
-	end
+	if self.connected then return true end
 
 	-- Create WebSocket client using CreateWebStreamClient
 	local success, result = pcall(function()
@@ -89,9 +83,7 @@ function WebSocketClient:connect()
 
 	if not success then
 		warn("[WebSocket]: Connection failed:", result)
-		if self.messageHandlers.error then
-			self.messageHandlers.error(result)
-		end
+		if self.messageHandlers.error then self.messageHandlers.error(result) end
 		return false
 	end
 
@@ -103,27 +95,21 @@ function WebSocketClient:connect()
 		local parseSuccess, parseError = pcall(function()
 			self:handleMessage(message)
 		end)
-		if not parseSuccess then
-			warn("[WebSocket]: Error handling message:", parseError)
-		end
+		if not parseSuccess then warn("[WebSocket]: Error handling message:", parseError) end
 	end)
 
 	-- Notify connection established
 	self:debugPrint("[🐛 WebSocket]: Connected to", self.url)
-	if self.messageHandlers.connect then
-		task.defer(function()
-			self.messageHandlers.connect()
-		end)
-	end
+	if self.messageHandlers.connect then task.defer(function()
+		self.messageHandlers.connect()
+	end) end
 
 	return true
 end
 
 function WebSocketClient:handleMessage(message)
 	self = self :: WebSocketClient
-	if not message or message == "" then
-		return
-	end
+	if not message or message == "" then return end
 
 	self:debugPrint("[🐛 WebSocket]: Received message:", string.sub(message, 1, 100))
 
@@ -162,18 +148,14 @@ end
 function WebSocketClient:disconnect()
 	self = self :: WebSocketClient
 
-	if not self.connected or not self.client then
-		return
-	end
+	if not self.connected or not self.client then return end
 
 	self.connected = false
 
 	self.client:Close()
 	-- self.client = nil
 
-	if self.messageHandlers.disconnect then
-		self.messageHandlers.disconnect()
-	end
+	if self.messageHandlers.disconnect then self.messageHandlers.disconnect() end
 end
 
 return WebSocketClient
