@@ -19,14 +19,11 @@ Azul also allows pushing local files into Studio using the `azul build` command,
 ## Features
 
 - - [x] 🔄 **Bi-directional sync**: Changes in Studio update files, and file edits update Studio
-- - [x] 🏗️ **[Build command](#build-command)**: `azul build` one-time pushes your local files into Studio (creates or overwrites, never deletes)
+- - [x] 🏗️ **[Build command](https://github.com/Ransomwave/azul/issues/7)**: `azul build` one-time pushes your local files into Studio (creates or overwrites, never deletes)
+- - [x] 📦 **[Push command](https://github.com/Ransomwave/azul/issues/7)**: `azul push` selectively pushes local files. Useful when importing external libraries or using package managers (i.e Wally)
 - - [x] 🌳 **DataModel mirroring**: Instance hierarchy 1:1 mapped to folder structure
 - - [x] 🎯 **No manual config / required structure**: Works out of the box with new and existing Roblox Studio projects, regardless of structure.
 - - [x] 🗺️ **Automatic sourcemap generation**: Generates a Rojo-compatible `sourcemap.json` so tools like Luau-lsp work out of the box.
-
-### Planned features
-
-- - [ ] 📦 **Package Manager Integration**: Allow seamless sync of packages installed via package managers (i.e Wally).
 
 ## Why Azul?
 
@@ -123,21 +120,9 @@ To get IntelliSense working, open your `User Settings (JSON)` from the command p
 
 This is my recommended setup for Azul projects. That said, Azul is compatible with any IDE or text editor that can edit `.luau` files. Luau-LSP is also available for other editors like [Neovim](https://github.com/lopi-py/luau-lsp.nvim).
 
-## How It Works
+### Recommended: VSCode with Verde
 
-### Desktop Daemon (TypeScript)
-
-- Maintains virtual tree of Studio's DataModel
-- Converts instances to filesystem structure
-- Watches local files for changes
-- Generates Rojo-compatible sourcemap.json
-- Build mode scans your sync directory and sends a snapshot to Studio (create/overwrite only: no deletes)
-
-### Studio Plugin (Luau)
-
-- Detects script changes, renames, moves, deletions
-- Sends updates to daemon via WebSocket
-- Applies incoming patches from file edits
+[Verde](https://marketplace.visualstudio.com/items?itemName=Dvitash.verde) is a VSCode extension that mimics the Roblox Studio Explorer and Properties windows. It works great alongside Azul to provide a seamless development experience.
 
 ## Filesystem Mapping
 
@@ -165,14 +150,6 @@ Script types are indicated by suffixes:
 - `.client.luau` for `LocalScript`
 - `.module.luau` for `ModuleScript`
 - No suffix defaults to `ModuleScript`
-
-## Build Command
-
-Importing code from elsewhere that isn't Roblox? Need to create a easily-reusable base project? The `azul build` command has you covered.
-
-- **What it does:** Pushes your sync directory into Studio once, creating missing folders/scripts and overwriting matching scripts. Unrelated Studio instances are left untouched.
-- **When to use:** Bootstrapping a new project, restoring from version control, importing files from non-roblox sources or reseeding a clean Studio place before normal two-way sync.
-- **How to run:** Run `azul build` in your project folder with the terminal. Run the Companion Plugin and see the changes appear in Studio!
 
 ## Configuration
 
