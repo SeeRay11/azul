@@ -65,7 +65,7 @@ local PUSH_CONFIG_PATH = {
 	"ServerStorage",
 	"Azul",
 	"Config",
-} -- Maps to ServerStorage.Azul.Config (ModuleScript)
+}
 
 local SETTINGS_SCOPE = enum.scope.GLOBAL -- or "project"
 local SETTINGS_KEY = "AZUL_SETTINGS"
@@ -655,10 +655,19 @@ local function readPushConfig()
 	local module = findPushConfigModule()
 	if not module then return nil, "Push config ModuleScript not found" end
 
+	-- Clone module to force require to refresh data
+	local moduleClone = module:Clone()
+	moduleClone.Parent = module.Parent
+	module:Destroy()
+	module = moduleClone
+	--
+
 	local ok, data = pcall(require, module)
 	if not ok then return nil, `Failed to require push config: {data}` end
 
 	if type(data) ~= "table" then return nil, "Push config is not a table" end
+
+	debugPrint(`[🐛 Azul]: Push config loaded from {module}: {HttpService:JSONEncode(data)}`)
 
 	local mappings = {}
 	if type(data.pushMappings) == "table" then
@@ -674,6 +683,7 @@ local function readPushConfig()
 						source = entry.source,
 						destination = dest,
 						destructive = entry.destructive == true,
+						rojoMode = entry.rojoMode == true,
 					})
 				end
 			end
@@ -693,7 +703,7 @@ end
 local function sendPushConfig()
 	local configPayload, err = readPushConfig()
 	if not configPayload then
-		warn(`[Azul]: push config unavailable: {err}`)
+		debugPrint(`[🐛 Azul]: push config unavailable: {err}`)
 		return false
 	end
 
