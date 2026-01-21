@@ -56,13 +56,15 @@ export class FileWriter {
     // Pre-compute all file paths and collect writes
     const writes: { node: TreeNode; filePath: string; dirPath: string }[] = [];
     const dirsToCreate = new Set<string>();
+    const batchPathToGuid = new Map<string, string>();
 
     for (const node of nodes) {
       if (!this.isScriptNode(node) || node.source === undefined) continue;
-      const filePath = this.getFilePath(node);
+      const filePath = this.getFilePathWithCollisionMap(node, batchPathToGuid);
       const dirPath = path.dirname(filePath);
       writes.push({ node, filePath, dirPath });
       dirsToCreate.add(dirPath);
+      batchPathToGuid.set(path.resolve(filePath), node.guid);
     }
 
     // Batch create all directories first (sorted by depth to ensure parents exist)
@@ -175,6 +177,16 @@ export class FileWriter {
    * Get the filesystem path for a node
    */
   public getFilePath(node: TreeNode): string {
+    return this.getFilePathWithCollisionMap(node);
+  }
+
+  /**
+   * Get the filesystem path for a node, with optional collision map for batch operations
+   */
+  private getFilePathWithCollisionMap(
+    node: TreeNode,
+    batchCollisionMap?: Map<string, string>
+  ): string {
     // Build the path from the node's hierarchy. For scripts, we only use the parent path
     // as directories, then add the script file name. This prevents creating an extra
     // folder named after the script itself.
@@ -195,9 +207,14 @@ export class FileWriter {
     }
 
     const desiredPath = path.join(this.baseDir, ...parts);
+    const normalizedDesiredPath = path.resolve(desiredPath);
+
+    // Check for collisions in both the persistent mappings and the batch collision map
+    const existingGuid = this.findGuidByFilePath(desiredPath);
+    const batchGuid = batchCollisionMap?.get(normalizedDesiredPath);
+    const collision = existingGuid || batchGuid;
 
     // If another GUID already owns this path, disambiguate using a stable suffix
-    const collision = this.findGuidByFilePath(desiredPath);
     if (collision && collision !== node.guid) {
       const ext = config.scriptExtension;
       const uniqueName = `${this.sanitizeName(node.name)}__${node.guid.slice(
