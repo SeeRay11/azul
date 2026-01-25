@@ -58,11 +58,12 @@ if (args.includes("--version")) {
 // get current running path
 const currentPath = process.cwd();
 if (
-  (currentPath.includes("\\sync") || currentPath.includes("/sync")) &&
+  (currentPath.includes(`\\${config.syncDir}`) ||
+    currentPath.includes(`/${config.syncDir}`)) &&
   !noWarnFlag
 ) {
   log.warn(
-    "Looks like you're trying to run Azul from within a 'sync' directory. Continuing to run Azul will create a directory like \"/sync/sync/\".",
+    `Looks like you're trying to run Azul from within a '${config.syncDir}' directory. Continuing to run Azul will create a directory like "/${config.syncDir}/${config.syncDir}/".`,
   );
   log.warn("Continue? (Y/N)");
 
